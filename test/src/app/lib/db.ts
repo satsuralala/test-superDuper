@@ -1,3 +1,3 @@
 import client from './mongodb';
 
-export const DB = client.db('superduper');
+export const DB = client.db('e-commerce');

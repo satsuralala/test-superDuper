@@ -1,60 +1,135 @@
-"use client"
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+"use client";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { useEffect, useState } from "react";
 
-export default function addProduct() {
-    const [name, setName]=useState(""); 
-     const [pass, setPass]=useState(""); 
-     const [dugar, setDugar]=useState(""); 
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+}
 
-     const createProduct= async()=>{
-        const newProduct = {
-            name,
-            pass,
-            dugar
-        };
+export default function Add() {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [products, setProduct] = useState<Product[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-        try{
-            const response=await fetch('/api/products',{
-                method:'POST',
-                headers:{
-                    'Content-Type': 'application/json',
-                },
-                body:JSON.stringify(newProduct)
-            });
-            if (response.ok) {
-                const result = await response.json();
-                console.log('Product created:', result);
-  
-                setName("");
-                setPass("");
-                setDugar("");
-            } else {
-                const errorData = await response.json();
-                console.error('Error creating product:', errorData);
-            }
+  const get = async () => {
+    try {
+      const res = await fetch("/api/addproduct");
+      const data = await res.json();
+      setProduct(data);
+    } catch {
+      console.log("Error happened in get");
+    }
+  };
 
+  const create = async () => {
+    try {
+      const res = await fetch("/api/addproduct", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({ name, price }),
+      });
 
-        }catch(err){
-            console.error('Network error:', err);
+      if (res.ok) {
+        get();
+        setName("");
+        setPrice("");
+      } else {
+        console.error("Failed to create product:", res.statusText);
+      }
+    } catch (error) {
+      console.error("Failed to create product", error);
+    }
+  };
 
+  const handleUpdate = (id: string) => {
+    const productToEdit = products.find((product) => product._id === id);
+    if (productToEdit) {
+      setName(productToEdit.name);
+      setPrice(productToEdit.price.toString());
+      setEditingId(id);
+    }
+  };
+
+  const saveEdit = async () => {
+    if (editingId) {
+      try {
+        const res = await fetch(`/api/addproduct/${editingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify({ name, price }),
+        });
+
+        if (res.ok) {
+          setName("");
+          setPrice("");
+          setEditingId(null);
+          get();
+        } else {
+          console.error("Failed to update product");
         }
-     }
+      } catch (error) {
+        console.error("Failed to save edited product", error);
+      }
+    }
+  };
 
+  const deleteProduct = async (id: string) => {
+    try {
+      const res = await fetch(`/api/addproduct/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-type": "application/json",
+        },
+      });
+      if (res.ok) {
+        get();
+      } else {
+        console.error("Failed to delete product");
+      }
+    } catch {
+      console.error("Failed to delete product");
+    }
+  };
 
+  useEffect(() => {
+    get();
+  }, []);
 
   return (
     <div>
-      <div className="text-white">ner</div>
-      <input type="text" placeholder="Type something..." onChange={(e)=>setName(e.target.value)} />
-      <div>ner</div>
-      <input type="text" placeholder="Type something..." onChange={(e)=>setPass(e.target.value)}/>
-      <div>ner</div>
-      <input type="text" placeholder="Type something..."  onChange={(e)=>setDugar(e.target.value)}/>
+      <Input
+        placeholder="Ner oruulna uu"
+        value={name} // Bind input to name state
+        onChange={(e) => setName(e.target.value)}
+      />
+      <Input
+        placeholder="Une oruulna uu"
+        value={price} // Bind input to price state
+        onChange={(e) => setPrice(e.target.value)}
+      />
+      <Button onClick={editingId ? saveEdit : create}>
+        {editingId ? "SAVE" : "ADD"}
+      </Button>
 
-
-      <Button onClick={createProduct} ></Button>
-     
+      <div className="ml-5">
+        {products.map((product: Product) => (
+          <div className="flex gap-3 pl-5" key={product._id}>
+            <div>PRODUCT DETAILS</div>
+            <div>{product.name}</div>
+            <div>{product.price}</div>
+            <Button onClick={() => handleUpdate(product._id)}>Update</Button>
+            <Button onClick={() => deleteProduct(product._id)}>Delete</Button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
