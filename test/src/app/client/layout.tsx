@@ -1,7 +1,7 @@
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-      <html lang="en">
+      <div>
         <body>{children}</body>
-      </html>
+      </div>
     );
   } 
